@@ -94,23 +94,11 @@ class SiteAliasFileLoaderTest extends TestCase
         $this->assertEquals('/path/to/birds', $result->get('root'));
         $this->assertEquals('seed', $result->get('options.food'));
 
-        // Ask for sitename only; find result in an aliases.yml file.
+        // Ask for sitename only; find result in a site.yml file.
         $name = new SiteAliasName('@trains');
         $result = $this->sut->load($name);
         $this->assertTrue($result instanceof AliasRecord);
         $this->assertEquals('/path/to/trains', $result->get('root'));
-
-        // Ask for sitename only; find result in a group.aliases.yml file.
-        $name = new SiteAliasName('@cats');
-        $result = $this->sut->load($name);
-        $this->assertTrue($result instanceof AliasRecord);
-        $this->assertEquals('/path/to/cats', $result->get('root'));
-
-        // Test fetching with a group and sitename without an environment specified.
-        $name = new SiteAliasName('@pets.cats');
-        $result = $this->sut->load($name);
-        $this->assertTrue($result instanceof AliasRecord);
-        $this->assertEquals('/path/to/cats', $result->get('root'));
 
         // Try to fetch an alias that does not exist.
         $name = new SiteAliasName('@missing');

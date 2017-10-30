@@ -69,14 +69,8 @@ class SiteAliasFileLoader
      */
     public function load(SiteAliasName $aliasName)
     {
-        // First attempt to load a sitename.alias.yml file for the alias.
+        // First attempt to load a sitename.site.yml file for the alias.
         $aliasRecord = $this->loadSingleAliasFile($aliasName);
-        if ($aliasRecord) {
-            return $aliasRecord;
-        }
-
-        // If that didn't work, try a group.aliases.yml file.
-        $aliasRecord = $this->loadNamedGroupAliasFile($aliasName);
         if ($aliasRecord) {
             return $aliasRecord;
         }

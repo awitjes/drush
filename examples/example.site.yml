@@ -19,28 +19,26 @@
 # Drupal site named "http://example.com" looks like this:
 #
 # @code
-# File: example.alias.yml
+# File: example.site.yml
 # dev:
 #   root: /path/to/drupal
 #   uri: http://example.com
 # @endcode
 #
+# Note that the first part of the filename (in this case "example")
+# defines the name of the site alias, and the top-level key ("dev")
+# defines the name of the environment.
+#
 # With this alias definition, then the following commands
 # are equivalent:
 #
-#   $ drush @example status
+#   $ drush @example.dev status
 #   $ drush --root=/path/to/drupal --uri=http://example.com status
 #
 # See the --uri option documentation below for hints on setting its value.
 #
 # Any option that can be placed on the Drush commandline
 # can also appear in an alias definition inside an 'options' section.
-#
-# There are several ways to create alias files.
-#
-#   + Put each alias in a separate file called ALIASNAME.alias.yml
-#   + Put multiple aliases in a single file called aliases.yml
-#   + Put groups of aliases into files called GROUPNAME.aliases.yml
 #
 # Drush will search for aliases in any of these files using
 # the alias search path.  The following locations are examined
@@ -81,37 +79,6 @@
 # be used in arguments to certain commands such as "drush rsync" and
 # "drush sql:sync".
 #
-# Alias groups (aliases stored together in files called
-# GROUPNAME.aliases.yml can be used to collect related sites
-# together.
-#
-# For example:
-#
-# @code
-# # File: elements.aliases.yml
-# sites:
-#   earth:
-#     dev:
-#       root: /path/to/drupal-earth
-#       uri: https://dev.earth.com
-#     live:
-#       root: /other/path/to/drupal-earth
-#       uri: https://earth.com
-#   wind:
-#     dev:
-#       root: /path/to/drupal-wind
-#       uri: https://dev.wind.com
-#     live:
-#       root: /other/path/to/drupal-wind
-#       uri: https://earth.com
-# @endcode
-#
-# Then the following aliases are defined:
-# - @elements.earth.dev
-# - @elements.earth.live
-# - @elements.wind.dev
-# - @elements.wind.live
-#
 # To see an example alias definition for the current bootstrapped
 # site, use the "site:alias" command with the built-in alias "@self":
 #
@@ -123,7 +90,7 @@
 # alias looks like this:
 #
 # @code
-# # File: remote.alias.yml
+# # File: remote.site.yml
 # live:
 #   host: server.domain.com
 #   user: www-admin
@@ -181,7 +148,7 @@
 # Complex example:
 #
 # @code
-# # File: remote.alias.yml
+# # File: remote.site.yml
 # live:
 #   host: server.domain.com
 #   user: www-admin
@@ -211,7 +178,7 @@
 # leading hashes to enable.
 #
 # @code
-# # File: mysite.alias.yml
+# # File: mysite.site.yml
 # stage:
 #   uri: http://stage.example.com
 #   root: /path/to/remote/drupal/root

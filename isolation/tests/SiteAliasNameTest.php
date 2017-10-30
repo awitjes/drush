@@ -7,7 +7,7 @@ class SiteAliasNameTest extends TestCase
 {
     public function testSiteAliasName()
     {
-        // Test a non-ambiguous simple sitename alias.
+        // Test an ambiguous sitename or env alias.
         $name = new SiteAliasName('@simple');
         $this->assertTrue(!$name->hasGroup());
         $this->assertTrue(!$name->hasEnv());
@@ -15,20 +15,17 @@ class SiteAliasNameTest extends TestCase
         $this->assertEquals('simple', $name->sitename());
         $this->assertEquals('@simple', (string)$name);
 
-        // Add in a group and an env
-        $name->setGroup('group');
+        // Add in a group an env
         $name->setEnv('dev');
-        $this->assertEquals('@group.simple.dev', (string)$name);
+        $this->assertEquals('@simple.dev', (string)$name);
 
-        // Test a non-ambiguous group.sitename.env alias.
-        $name = new SiteAliasName('@group.site.env');
-        $this->assertTrue($name->hasGroup());
+        // Test a non-ambiguous sitename.env alias.
+        $name = new SiteAliasName('@site.env');
         $this->assertTrue($name->hasEnv());
         $this->assertTrue(!$name->isAmbiguous());
-        $this->assertEquals('group', $name->group());
         $this->assertEquals('site', $name->sitename());
         $this->assertEquals('env', $name->env());
-        $this->assertEquals('@group.site.env', (string)$name);
+        $this->assertEquals('@site.env', (string)$name);
 
         // Test an ambiguous one.two alias.
         $name = new SiteAliasName('@one.two');

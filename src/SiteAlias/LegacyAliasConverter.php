@@ -186,7 +186,7 @@ EOT;
         // If the user deletes the checksum file, then we will never
         // overwrite the file again. This also covers potential collisions,
         // where the user might not realize that a legacy alias file
-        // would write to a new alias.yml file they created manually.
+        // would write to a new site.yml file they created manually.
         if (!file_exists($checksumPath)) {
             return false;
         }
@@ -408,7 +408,7 @@ EOT;
 
     protected function convertSingleFileAlias($aliasName, $env, $data, $dir = '')
     {
-        $filename = $this->outputFilename($aliasName, '.alias.yml', $dir);
+        $filename = $this->outputFilename($aliasName, '.site.yml', $dir);
         return [
             $filename => [
                 $env => $data,
@@ -418,6 +418,7 @@ EOT;
 
     protected function convertGroupAlias($group, $aliasName, $env, $data, $dir = '')
     {
+        // TODO: explode these records into multiple single alias files
         $filename = $this->outputFilename($group, '.aliases.yml', $dir);
         return [
             $filename => [

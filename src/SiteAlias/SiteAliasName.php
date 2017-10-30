@@ -2,12 +2,10 @@
 namespace Drush\SiteAlias;
 
 /**
- * Parse a string that contains an alias name, and provide convenience
+ * Parse a string that contains a site alias name, and provide convenience
  * methods to access the parts.
  *
  * When provided by users, aliases must be in one of the following forms:
- *
- *   - @group.sitename.env: Fully specify group, sitename and envioronment.
  *
  *   - @sitename.env: List only sitename and environment.
  *
@@ -15,25 +13,21 @@ namespace Drush\SiteAlias;
  *       or 'dev' if there is no 'default' (or whatever is there if there is
  *       only one).
  *
- *   - @group.sitename: Same environment lookup as above for a site specified
- *       in a group.
+ *   - @env: Look up a named environment in instances where the site root
+ *       is known (e.g. via cwd).
  *
  * When provided to an API, the '@' is optional.
  *
- * Note that @sitename.env and @group.sitename are ambiguous. Drush will
- * attempt to interpret single-dot aliases both ways; however, having a site
- * with the same name as a group will prevent the use of the @group.sitename
- * alias form for that group.
+ * Note that @sitename and @env are ambiguous. Drush will attempt to
+ * interpret these site aliases both ways, first giving precedence to
+ * @env.
  *
  * Note that:
  *
- * - 'group', 'sitename' and 'env' MUST NOT contain a '.' (unlike previous
+ * - 'sitename' and 'env' MUST NOT contain a '.' (unlike previous
  *     versions of Drush).
- * - Users SHOULD NOT create a group that has the same name as any single site.
- * - Users SHOULD NOT use the same 'sitename' in multiple groups. If they do,
- *     then they SHOULD always use @group.sitename.env whenever referencing
- *     one of the sitenames. In instances where they do not, Drush will return
- *     an arbitrary matching site.
+ * - Users SHOULD NOT create any environments that have the same name
+ *     as any site name (and visa-versa).
  */
 class SiteAliasName
 {
