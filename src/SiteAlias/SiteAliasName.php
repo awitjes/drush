@@ -11,16 +11,26 @@ namespace Drush\SiteAlias;
  *
  *   - @sitename: Provides only the sitename; uses the 'default' environment,
  *       or 'dev' if there is no 'default' (or whatever is there if there is
- *       only one).
+ *       only one). With this form, the site alias name has no environment
+ *       until the appropriate default environment is looked up.
  *
  *   - @env: Look up a named environment in instances where the site root
- *       is known (e.g. via cwd).
+ *       is known (e.g. via cwd). In this form, there is an implicit sitename
+ *       'self' which is replaced by the actual site alias name once known.
+ *
+ * There are also two special aliases that are recognized:
+ *
+ *   - @self: The current bootstrapped site.
+ *
+ *   - @none: No alias ('root' and 'uri' unset).
+ *
+ * The special alias forms have no environment component.
  *
  * When provided to an API, the '@' is optional.
  *
- * Note that @sitename and @env are ambiguous. Drush will attempt to
- * interpret these site aliases both ways, first giving precedence to
- * @env.
+ * Note that @sitename and @env are ambiguous. Aliases in this form
+ * (that are not one of the special aliases) will first be assumed
+ * to be @env, and may be converted to @sitename later.
  *
  * Note that:
  *
@@ -31,15 +41,13 @@ namespace Drush\SiteAlias;
  */
 class SiteAliasName
 {
-    protected $group;
     protected $sitename;
     protected $env;
-    protected $ambiguous;
 
     /**
-     * Match the parts of a regex name after the '@'.
+     * Match the parts of a regex name.
      */
-    const ALIAS_NAME_REGEX = '%^@?([a-zA-Z0-9_-]+)(\.[a-zA-Z0-9_-]+)?(\.[a-zA-Z0-9_-]+)?$%';
+    const ALIAS_NAME_REGEX = '%^@?([a-zA-Z0-9_-]+)(\.[a-zA-Z0-9_-]+)?$%';
 
     /**
      * Creae a SiteAliasName object from an alias name string.
@@ -59,9 +67,6 @@ class SiteAliasName
     public function __toString()
     {
         $parts = [ $this->sitename() ];
-        if ($this->hasGroup()) {
-            array_unshift($parts, $this->group());
-        }
         if ($this->hasEnv()) {
             $parts[] = $this->env();
         }
@@ -81,119 +86,6 @@ class SiteAliasName
             return false;
         }
         return preg_match(self::ALIAS_NAME_REGEX, $aliasName);
-    }
-
-    /**
-     * If the alias name was ambiguous, assume for now that it was
-     * in the form '@group.sitename'.
-     */
-    public function assumeAmbiguousIsGroup()
-    {
-        if ($this->ambiguous && !$this->hasGroup()) {
-            $this->group = $this->sitename;
-            $this->sitename = $this->env;
-            $this->env = null;
-        }
-    }
-
-    /**
-     * If the alias name was ambiguous, assume for now that it was
-     * in the form '@sitename.env'.
-     */
-    public function assumeAmbiguousIsSitename()
-    {
-        if ($this->ambiguous && !$this->hasEnv()) {
-            $this->env = $this->sitename;
-            $this->sitename = $this->group;
-            $this->group = null;
-        }
-    }
-
-    /**
-     * In the case of calling SiteAliasManager::getMultiple(),
-     * we are interested in alias names that could be:
-     *
-     *   - @group
-     *   - @group.sitename
-     *   - @sitename
-     *
-     * This method will return the first component of an alias
-     * in one of those forms (the group or sitename), or 'false'
-     * for any alias name that does not match that pattern.
-     *
-     * @return string|false
-     */
-    public function couldBeCollectionName()
-    {
-        $this->assumeAmbiguousIsSitename();
-        if ($this->hasGroup()) {
-            return false;
-        }
-        return $this->sitename();
-    }
-
-    /**
-     * If this alias name is being used to call SiteALiasManager::getMultipl(),
-     * and it is in the form @group.sitename, then this method will return
-     * the 'sitename' component. Otherwise it returns 'false'.
-     *
-     * @return string|false
-     */
-    public function sitenameOfGroupCollection()
-    {
-        if (!$this->couldBeCollectionName() || !$this->hasEnv()) {
-            return false;
-        }
-        return $this->env();
-    }
-
-    /**
-     * Returns true if alias name was provided in an ambiguous form.
-     *
-     * @return bool
-     */
-    public function isAmbiguous()
-    {
-        return $this->ambiguous;
-    }
-
-    /**
-     * Clears up the ambiguity of an alias name object once it is found
-     * as either a '@sitename.env' or a '@group.sitename'.
-     */
-    public function disambiguate()
-    {
-        $this->ambiguous = false;
-    }
-
-    /**
-     * Return true if this alias name has a group.
-     *
-     * @return bool
-     */
-    public function hasGroup()
-    {
-        return !empty($this->group);
-    }
-
-    /**
-     * Return the name of the group portion of the alias name.
-     *
-     * @return string
-     */
-    public function group()
-    {
-        return $this->group;
-    }
-
-    /**
-     * Set the name of the group portion of the alias name.
-     *
-     * @param string $group
-     */
-    public function setGroup($group)
-    {
-        $this->group = $group;
     }
 
     /**
@@ -278,14 +170,6 @@ class SiteAliasName
     {
         // Example contents of $matches:
         //
-        // - a.b.c:
-        //     [
-        //       0 => 'a.b.c',
-        //       1 => 'a',
-        //       2 => '.b',
-        //       3 => '.c',
-        //     ]
-        //
         // - a.b:
         //     [
         //       0 => 'a.b',
@@ -302,24 +186,15 @@ class SiteAliasName
             return false;
         }
 
-        // If $matches contains only two items, then the alias name contains
-        // only the sitename.
+        // If $matches contains only two items, then assume the alias name
+        // contains only the environment.
         if (count($matches) == 2) {
-            return $this->processJustSitename($matches[1]);
+            return $this->processSingleItem($matches[1]);
         }
 
-        // If there are four items in $matches, then the group, sitename
-        // and env were all specified.
-        if (count($matches) == 4) {
-            $group = $matches[1];
-            $sitename = ltrim($matches[2], '.');
-            $env = ltrim($matches[3], '.');
-            return $this->processGroupSitenameAndEnv($group, $sitename, $env);
-        }
-
-        // Otherwise, it is ambiguous: the alias name might be @group.sitename,
-        // or it might be @sitename.env.
-        return $this->processAmbiguous($matches[1], ltrim($matches[2], '.'));
+        $this->sitename = $matches[1];
+        $this->env = ltrim($matches[2], '.');
+        return true;
     }
 
     /**
@@ -328,48 +203,19 @@ class SiteAliasName
      * @param string $sitename
      * @return true
      */
-    protected function processJustSitename($sitename)
+    protected function processSingleItem($item)
     {
-        $this->group = '';
-        $this->sitename = $sitename;
-        $this->env = '';
-        $this->ambiguous = false;
+        if ($this->isSpecialAliasName($item)) {
+            $this->setSitename($item);
+            return true;
+        }
+        $this->sitename = 'self';
+        $this->env = $item;
         return true;
     }
 
-    /**
-     * Process an alias name provided as '@group.sitename.env'.
-     *
-     * @param string $group
-     * @param string $sitename
-     * @param string $env
-     * @return true
-     */
-    protected function processGroupSitenameAndEnv($group, $sitename, $env)
+    protected function isSpecialAliasName($item)
     {
-        $this->group = $group;
-        $this->sitename = $sitename;
-        $this->env = $env;
-        $this->ambiguous = false;
-        return true;
-    }
-
-    /**
-     * Process a two-part alias name that could be either '@group.sitename'
-     * or '@sitename.env'. We will start out assuming that the form was
-     * '@sitename.env'. The caller may use assumeAmbiguousIsGroup() or
-     * assumeAmbiguousIsSitename() to switch its 'mode'.
-     *
-     * @param string $groupOrSitename
-     * @param string $sitenameOrEnv
-     * @return true
-     */
-    protected function processAmbiguous($groupOrSitename, $sitenameOrEnv)
-    {
-        $this->group = '';
-        $this->sitename = $groupOrSitename;
-        $this->env = $sitenameOrEnv;
-        $this->ambiguous = true;
-        return true;
+        return ($item == 'self') || ($item == 'none');
     }
 }
