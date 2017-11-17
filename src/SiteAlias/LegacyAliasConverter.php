@@ -212,6 +212,7 @@ EOT;
 # Delete this checksum file or modify $name to prevent further updates to it.
 EOT;
         $checksum = $this->calculateChecksum($contents);
+        @mkdir(dirname($checksumPath));
         file_put_contents($checksumPath, "{$comment}\n{$checksum}");
     }
 
@@ -225,7 +226,7 @@ EOT;
 
     protected function checksumPath($path)
     {
-        return dirname($path) . '/.' . basename($path, '.yml') . '.md5';
+        return dirname($path) . '/.checksums/' . basename($path, '.yml') . '.md5';
     }
 
     protected function calculateChecksum($data)
@@ -301,16 +302,11 @@ EOT;
 
     protected function convertMultipleAliasesLegacyFile($legacyFile, $aliases, $options)
     {
-        $groupName = basename($legacyFile, '.aliases.drushrc.php') . '.';
-        if ($groupName == $legacyFile) {
-            $groupName = '';
-        }
-
         $result = [];
         foreach ($aliases as $aliasName => $data) {
             // 'array_merge' is how Drush 8 combines these records.
             $data = array_merge($options, $data);
-            $convertedAlias = $this->convertAlias($groupName . $aliasName, $data, dirname($legacyFile));
+            $convertedAlias = $this->convertAlias($aliasName, $data, dirname($legacyFile));
             $result = static::arrayMergeRecursiveDistinct($result, $convertedAlias);
         }
         return $result;
@@ -319,34 +315,23 @@ EOT;
     protected function convertAlias($aliasName, $data, $dir = '')
     {
         $env = 'dev';
-        $group = '';
         // We allow $aliasname to be:
         //   - sitename
         //   - sitename.env
         //   - group.sitename.env
-        // If there are any more dots than that, we assume
-        // that the extras are part of the sitename, and
-        // convert to:
-        //   - group.site-name.env
+        // In the case of the last, we will convert to
+        // 'group-sitename.env' (and so on for any additional dots).
         // First, we will strip off the 'env' if it is present.
         if (preg_match('/(.*)\.([^.]+)$/', $aliasName, $matches)) {
             $aliasName = $matches[1];
             $env = $matches[2];
         }
-        // Next, strip off the 'group' if there is one.
-        if (preg_match('/^([^.]+)\.(.*)/', $aliasName, $matches)) {
-            $group = $matches[1];
-            $aliasName = $matches[2];
-        }
-        // Finally, convert all remaining dots to dashes.
+        // Convert all remaining dots to dashes.
         $aliasName = strtr($aliasName, '.', '-');
 
         $data = $this->fixSiteData($data);
 
-        if (empty($group)) {
-            return $this->convertSingleFileAlias($aliasName, $env, $data, $dir);
-        }
-        return $this->convertGroupAlias($group, $aliasName, $env, $data, $dir);
+        return $this->convertSingleFileAlias($aliasName, $env, $data, $dir);
     }
 
     protected function fixSiteData($data)
@@ -412,21 +397,6 @@ EOT;
         return [
             $filename => [
                 $env => $data,
-            ],
-        ];
-    }
-
-    protected function convertGroupAlias($group, $aliasName, $env, $data, $dir = '')
-    {
-        // TODO: explode these records into multiple single alias files
-        $filename = $this->outputFilename($group, '.aliases.yml', $dir);
-        return [
-            $filename => [
-                'sites' => [
-                    $aliasName => [
-                        $env => $data,
-                    ],
-                ],
             ],
         ];
     }

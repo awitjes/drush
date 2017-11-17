@@ -198,7 +198,7 @@ class SiteCommands extends DrushCommands implements SiteAliasManagerAwareInterfa
     public function interactSiteAliasConvert(Input $input, Output $output)
     {
         if (!$input->getArgument('destination')) {
-            $default = $this->getConfig()->cwd();
+            $default = Path::join($this->getConfig()->home(), '.drush/site-aliases');
             if ($composerRoot = Drush::bootstrapManager()->getComposerRoot()) {
                 $default = Path::join($composerRoot, 'drush/site-aliases');
             }
