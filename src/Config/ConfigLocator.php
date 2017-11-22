@@ -385,7 +385,7 @@ class ConfigLocator
             $paths[] = $siteRoot . '/drush';
         }
         $paths[] = $this->composerRoot . '/drush';
-        $candidates = [ '', 'sites' ];
+        $candidates = [ 'sites' ];
         $paths = $this->identifyCandidates($paths, $candidates);
 
         return $paths;

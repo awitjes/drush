@@ -94,7 +94,8 @@ class LegacyAliasConverterTest extends TestCase
     {
         $legacyFiles = $this->discovery->findAllLegacyAliasFiles();
         $result = $this->callProtected('convertAll', [$legacyFiles]);
-        $this->assertEquals('cc.site.yml,isp.site.yml,live.site.yml,nitrogen.site.yml,one.site.yml,outlandish-josh.site.yml,server.site.yml,update.site.yml,pantheon.site.yml', implode(',', array_keys($result)));
+        ksort($result);
+        $this->assertEquals('cc.site.yml,isp.site.yml,live.site.yml,nitrogen.site.yml,one.site.yml,outlandish-josh.site.yml,pantheon.site.yml,server.site.yml,update.site.yml', implode(',', array_keys($result)));
         //$this->assertEquals('', var_export($result, true));
         $this->assertEquals('dev-outlandish-josh.pantheonsite.io', $result['outlandish-josh.site.yml']['dev']['uri']);
     }

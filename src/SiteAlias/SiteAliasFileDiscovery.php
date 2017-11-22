@@ -15,7 +15,7 @@ use Symfony\Component\Finder\Finder;
  * record.
  *
  * Sites may also define a special alias file self.site.yml, which
- * may be stored in the drush/site-aliases directory relative to either
+ * may be stored in the drush/sites directory relative to either
  * the Drupal root or the Composer root of the site. The environments
  * in this file will be merged with the available environments for
  * the element @self, however it is defined.
