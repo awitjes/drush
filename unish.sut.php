@@ -52,7 +52,7 @@ stage:
 EOT;
   mkdir("$working_dir/drush");
   mkdir("$working_dir/drush/sites");
-  file_put_contents("$working_dir/drush/sites/sut.alias.yml", $alias_contents);
+  file_put_contents("$working_dir/drush/sites/sut.site.yml", $alias_contents);
 
   $verbose = unishIsVerbose();
   $cmd = "composer $verbose install --prefer-dist --no-progress --no-suggest --working-dir " . escapeshellarg($working_dir);
