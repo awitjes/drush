@@ -48,17 +48,16 @@
 #      or (equivalently) any path passed in via --alias-path=...
 #      on the command line.
 #   2. In one of the site-specific locations:
-#        a. The /drush folder for the current Drupal site
-#        b. The /drush folder in the directory above the current Drupal site
+#        a. The /drush/sites folder for the current Drupal site
+#        b. The /drush/sites folder in the directory above the current Drupal site
 #
 # These locations are no longer searched recursively; alias files must
-# appear directly inside one of the search locations, or in a directory called
-# 'site-aliases' in a search location, or it will not be found.
+# appear directly inside one of the search locations, or it will not be found.
 #
 # The preferred locations for alias files, then, are:
 #
-#   $ROOT/drush/site-aliases
-#   $ROOT/../drush/site-aliases
+#   $ROOT/drush/sites
+#   $ROOT/../drush/sites
 #
 # If you would like to add additional locations, you can do so by
 # listing additional locations in your configuraton files. For example,
@@ -69,8 +68,8 @@
 # drush:
 #   paths:
 #     alias-path:
-#       - '${env.home}/.drush/site-aliases'
-#       - /etc/drush
+#       - '${env.home}/.drush/sites'
+#       - /etc/drush/sites
 # @endcode
 #
 # Files stored in one of the search path locations can be used to create
