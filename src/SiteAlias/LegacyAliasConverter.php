@@ -32,6 +32,11 @@ class LegacyAliasConverter
     protected $simulate = false;
 
     /**
+     * @var array
+     */
+    protected $convertedFileMap = [];
+
+    /**
      * LegacyAliasConverter constructor.
      *
      * @param SiteAliasFileDiscovery $discovery Provide the same discovery
@@ -144,7 +149,10 @@ class LegacyAliasConverter
             return Yaml::dump($data, PHP_INT_MAX, $indent, false, true);
         }
 
-        $recoverSource = basename($path, '.yml') . '.drushrc.php';
+        $recoverSource = $this->recoverLegacyFile($path);
+        if (!$recoverSource) {
+            $recoverSource = 'the source alias file';
+        }
         $contents = <<<EOT
 # This is a placeholder file used to track when $recoverSource was converted.
 # If you delete $recoverSource, then you may delete this file.
@@ -236,7 +244,7 @@ EOT;
 
     protected function determineConvertedFilename($legacyFile)
     {
-        $convertedFile = preg_replace('#\.drushrc\.php$#', '.yml', $legacyFile);
+        $convertedFile = preg_replace('#\.alias(|es)\.drushrc\.php$#', '.site.yml', $legacyFile);
         // Sanity check: if no replacement was done on the filesystem, then
         // we will presume that no conversion is needed here after all.
         if ($convertedFile == $legacyFile) {
@@ -250,7 +258,21 @@ EOT;
         if (!empty($this->target)) {
             $convertedFile = basename($convertedFile);
         }
+        $this->cacheConvertedFilePath($legacyFile, $convertedFile);
         return $convertedFile;
+    }
+
+    protected function cacheConvertedFilePath($legacyFile, $convertedFile)
+    {
+        $this->convertedFileMap[basename($convertedFile)] = basename($legacyFile);
+    }
+
+    protected function recoverLegacyFile($convertedFile)
+    {
+        if (!isset($this->convertedFileMap[basename($convertedFile)])) {
+            return false;
+        }
+        return $this->convertedFileMap[basename($convertedFile)];
     }
 
     protected function checkNeedsConversion($legacyFile, $convertedFile)

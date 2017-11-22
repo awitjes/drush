@@ -42,6 +42,16 @@ class SiteAliasFileDiscovery
     }
 
     /**
+     * Return all of the paths where alias files may be found.
+     * @return string[]
+     */
+    public function searchLocations()
+    {
+        return $this->searchLocations;
+    }
+
+
+    /**
      * Set the search depth for finding alias files
      *
      * @param string|int $depth (@see \Symfony\Component\Finder\Finder::depth)

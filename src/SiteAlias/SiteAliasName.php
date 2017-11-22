@@ -9,14 +9,15 @@ namespace Drush\SiteAlias;
  *
  *   - @sitename.env: List only sitename and environment.
  *
- *   - @sitename: Provides only the sitename; uses the 'default' environment,
- *       or 'dev' if there is no 'default' (or whatever is there if there is
- *       only one). With this form, the site alias name has no environment
- *       until the appropriate default environment is looked up.
- *
  *   - @env: Look up a named environment in instances where the site root
  *       is known (e.g. via cwd). In this form, there is an implicit sitename
  *       'self' which is replaced by the actual site alias name once known.
+ *
+ *   - @sitename: Provides only the sitename; uses the 'default' environment,
+ *       or 'dev' if there is no 'default' (or whatever is there if there is
+ *       only one). With this form, the site alias name has no environment
+ *       until the appropriate default environment is looked up. This form
+ *       is checked only after `@env` returns no matches.
  *
  * There are also two special aliases that are recognized:
  *
@@ -38,6 +39,8 @@ namespace Drush\SiteAlias;
  *     versions of Drush).
  * - Users SHOULD NOT create any environments that have the same name
  *     as any site name (and visa-versa).
+ * - All environments in one site record SHOULD be different versions
+ *     of the same site (e.g. dev / test / live).
  */
 class SiteAliasName
 {
@@ -50,13 +53,28 @@ class SiteAliasName
     const ALIAS_NAME_REGEX = '%^@?([a-zA-Z0-9_-]+)(\.[a-zA-Z0-9_-]+)?$%';
 
     /**
+     * Create a new site alias name
+     *
+     * @param string $item
+     * @return SiteAliasName
+     */
+    public static function parse($item)
+    {
+        $aliasName = new self();
+        $aliasName->doParse($item);
+        return $aliasName;
+    }
+
+    /**
      * Creae a SiteAliasName object from an alias name string.
      *
-     * @param string $aliasName a string representation of an alias name.
+     * @param string $sitename The alias name for the site.
+     * @param string $env The name for the site's environment.
      */
-    public function __construct($aliasName)
+    public function __construct($sitename = null, $env = null)
     {
-        $this->parse($aliasName);
+        $this->sitename = $sitename;
+        $this->env = $env;
     }
 
     /**
@@ -100,7 +118,7 @@ class SiteAliasName
      */
     public function sitename()
     {
-        return $this->sitename;
+        return empty($this->sitename) ? 'self' : $this->sitename;
     }
 
     /**
@@ -111,6 +129,17 @@ class SiteAliasName
     public function setSitename($sitename)
     {
         $this->sitename = $sitename;
+    }
+
+    /**
+     * In general, all aliases have a sitename. The time when one will not
+     * is when an environment name `@env` is used as a shortcut for `@self.env`
+     *
+     * @return bool
+     */
+    public function hasSitename()
+    {
+        return !empty($this->sitename);
     }
 
     /**
@@ -150,7 +179,7 @@ class SiteAliasName
      */
     public function isSelf()
     {
-        return $this->sitename() == 'self';
+        return ($this->sitename == 'self') && !isset($this->env);
     }
 
     /**
@@ -158,7 +187,7 @@ class SiteAliasName
      */
     public function isNone()
     {
-        return $this->sitename() == 'none';
+        return ($this->sitename == 'none') && !isset($this->env);
     }
 
     /**
@@ -166,7 +195,7 @@ class SiteAliasName
      *
      * @param string $aliasName a string representation of an alias name.
      */
-    protected function parse($aliasName)
+    protected function doParse($aliasName)
     {
         // Example contents of $matches:
         //
@@ -209,11 +238,17 @@ class SiteAliasName
             $this->setSitename($item);
             return true;
         }
-        $this->sitename = 'self';
+        $this->sitename = '';
         $this->env = $item;
         return true;
     }
 
+    /**
+     * Determine whether the requested name is a special alias name.
+     *
+     * @param string $item
+     * @return boolean
+     */
     protected function isSpecialAliasName($item)
     {
         return ($item == 'self') || ($item == 'none');
